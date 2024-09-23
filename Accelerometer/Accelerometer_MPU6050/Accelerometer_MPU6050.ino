@@ -25,6 +25,10 @@ float rollCalibration = -3.71;
 float pitchCalibration = 1.75;
 float yawCalibration = 0.49;
 
+float rollSmooth = 0.0;
+float pitchSmooth = 0.0;
+float yawSmooth = 0.0;
+
 void gyro_signals(void) {
   Wire.beginTransmission(0x68);
   Wire.write(0x1A);
@@ -44,6 +48,10 @@ void gyro_signals(void) {
   rollRate=(float)GyroX/65.5;
   pitchRate=(float)GyroY/65.5;
   yawRate=(float)GyroZ/65.5;
+
+  rollRate-=rollCalibration;
+  pitchRate-=pitchCalibration;
+  yawRate-=yawCalibration;
 }
 
 void calibrate() {
@@ -85,33 +93,18 @@ void loop() {
   gyro_signals();
   // calibrate();
 
-  rollRate-=rollCalibration;
-  pitchRate-=pitchCalibration;
-  yawRate-=yawCalibration;
+  float smoothing = 1.0 - (analogRead(A7) / float(1023));
 
-  float pot = analogRead(A7) / float(1023);
-
-  rollRate *= pot;
-  pitchRate *= pot;
-  yawRate *= pot;
-
-  // Round to int
-  rollRate = float(int(rollRate));
-  pitchRate = float(int(pitchRate));
-  yawRate = float(int(yawRate));
+  rollSmooth = (smoothing * rollRate) + (1.0 - smoothing) * rollSmooth;
+  pitchSmooth = (smoothing * pitchRate) + (1.0 - smoothing) * pitchSmooth;
+  yawSmooth = (smoothing * yawRate) + (1.0 - smoothing) * yawSmooth;
 
   Serial.print("Roll = ");
-  Serial.print(rollRate); 
+  Serial.print(int(rollSmooth / 10)); 
   Serial.print(" Pitch = ");
-  Serial.print(pitchRate);
+  Serial.print(int(pitchSmooth / 10));
   Serial.print(" Yaw = ");
-  Serial.println(yawRate);
-
-  Serial.println(pot);
+  Serial.println(int(yawSmooth / 10));
   
   delay(50);
 }
-
-// TODO:
-// Add potentiometer smoothing
-// Translate rate to auto-settling angle?
