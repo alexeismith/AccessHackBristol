@@ -94,11 +94,11 @@ void loop() {
   pitchRate = float(int(pitchRate));
   yawRate = float(int(yawRate));
 
-  Serial.print("Roll=");
+  Serial.print("Roll = ");
   Serial.print(rollRate); 
-  Serial.print(" Pitch=");
+  Serial.print(" Pitch = ");
   Serial.print(pitchRate);
-  Serial.print(" Yaw=");
+  Serial.print(" Yaw = ");
   Serial.println(yawRate);
   
   delay(50);
