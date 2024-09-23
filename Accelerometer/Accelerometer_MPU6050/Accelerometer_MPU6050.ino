@@ -89,6 +89,12 @@ void loop() {
   pitchRate-=pitchCalibration;
   yawRate-=yawCalibration;
 
+  float pot = analogRead(A7) / float(1023);
+
+  rollRate *= pot;
+  pitchRate *= pot;
+  yawRate *= pot;
+
   // Round to int
   rollRate = float(int(rollRate));
   pitchRate = float(int(pitchRate));
@@ -100,6 +106,12 @@ void loop() {
   Serial.print(pitchRate);
   Serial.print(" Yaw = ");
   Serial.println(yawRate);
+
+  Serial.println(pot);
   
   delay(50);
 }
+
+// TODO:
+// Add potentiometer smoothing
+// Translate rate to auto-settling angle?
