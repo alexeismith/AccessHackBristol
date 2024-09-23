@@ -17,7 +17,14 @@ By the act of copying, use, setup or assembly, the user accepts all resulting li
 // https://github.com/CarbonAeronautics/Part-IV-MPU6050gyroscope
 
 #include <Wire.h>
-float RateRoll, RatePitch, RateYaw;
+
+float rollRate, pitchRate, yawRate;
+
+// Run calibrate() to regenerate the following hard-coded values:
+float rollCalibration = -3.71;
+float pitchCalibration = 1.75;
+float yawCalibration = 0.49;
+
 void gyro_signals(void) {
   Wire.beginTransmission(0x68);
   Wire.write(0x1A);
@@ -34,10 +41,33 @@ void gyro_signals(void) {
   int16_t GyroX=Wire.read()<<8 | Wire.read();
   int16_t GyroY=Wire.read()<<8 | Wire.read();
   int16_t GyroZ=Wire.read()<<8 | Wire.read();
-  RateRoll=(float)GyroX/65.5;
-  RatePitch=(float)GyroY/65.5;
-  RateYaw=(float)GyroZ/65.5;
+  rollRate=(float)GyroX/65.5;
+  pitchRate=(float)GyroY/65.5;
+  yawRate=(float)GyroZ/65.5;
 }
+
+void calibrate() {
+  int calibrationLength = 2000;
+
+  for (int i = 0; i <calibrationLength; i++) {
+    gyro_signals();
+    rollCalibration+=rollRate;
+    pitchCalibration+=pitchRate;
+    yawCalibration+=yawRate;
+    delay(1);
+  }
+  rollCalibration/=calibrationLength;
+  pitchCalibration/=calibrationLength;
+  yawCalibration/=calibrationLength;
+
+  Serial.print("rollCalibration: ");
+  Serial.println(rollCalibration);
+  Serial.print("pitchCalibration: ");
+  Serial.println(pitchCalibration);
+  Serial.print("yawCalibration: ");
+  Serial.println(yawCalibration);
+}
+
 void setup() {
   Serial.begin(57600);
   pinMode(13, OUTPUT);
@@ -48,15 +78,28 @@ void setup() {
   Wire.beginTransmission(0x68); 
   Wire.write(0x6B);
   Wire.write(0x00);
-  Wire.endTransmission();
+  Wire.endTransmission();  
 }
+
 void loop() {
   gyro_signals();
-  Serial.print("Roll rate [°/s]= ");
-  Serial.print(RateRoll);
-  Serial.print(" Pitch Rate [°/s]= ");
-  Serial.print(RatePitch);
-  Serial.print(" Yaw Rate [°/s]= ");
-  Serial.println(RateYaw);
+  // calibrate();
+
+  rollRate-=rollCalibration;
+  pitchRate-=pitchCalibration;
+  yawRate-=yawCalibration;
+
+  // Round to int
+  rollRate = float(int(rollRate));
+  pitchRate = float(int(pitchRate));
+  yawRate = float(int(yawRate));
+
+  Serial.print("Roll=");
+  Serial.print(rollRate); 
+  Serial.print(" Pitch=");
+  Serial.print(pitchRate);
+  Serial.print(" Yaw=");
+  Serial.println(yawRate);
+  
   delay(50);
 }
