@@ -108,3 +108,7 @@ void loop() {
   
   delay(50);
 }
+
+// Plan:
+// Roll instantaneous angle controls Chord complexity
+// Yaw rate controls expression CC
