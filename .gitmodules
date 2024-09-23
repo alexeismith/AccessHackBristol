@@ -7,3 +7,6 @@
 [submodule "Accelerometer/submodule/MPU6050_tutorial_kalman_angle"]
 	path = Accelerometer/submodule/MPU6050_tutorial_kalman_angle
 	url = https://github.com/CarbonAeronautics/Part-XV-1DKalmanFilter.git
+[submodule "Accelerometer/submodule/MPU6050_tutorial_angle"]
+	path = Accelerometer/submodule/MPU6050_tutorial_angle
+	url = https://github.com/CarbonAeronautics/Part-XIV-MeasureAngles.git

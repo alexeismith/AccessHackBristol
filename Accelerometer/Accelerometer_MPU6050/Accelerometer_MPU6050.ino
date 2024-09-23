@@ -16,99 +16,55 @@ By the act of copying, use, setup or assembly, the user accepts all resulting li
 // https://www.youtube.com/watch?v=yhz3bRQLvBY
 // https://github.com/CarbonAeronautics/Part-IV-MPU6050gyroscope
 
-#include <Wire.h>
+#include "MPU6050.h"
 
 float rollRate, pitchRate, yawRate;
+float rollAngle, pitchAngle;
 
-// Run calibrate() to regenerate the following hard-coded values:
-float rollCalibration = -3.71;
-float pitchCalibration = 1.75;
-float yawCalibration = 0.49;
+float rollRateSmooth = 0.0;
+float pitchRateSmooth = 0.0;
+float yawRateSmooth = 0.0;
 
-float rollSmooth = 0.0;
-float pitchSmooth = 0.0;
-float yawSmooth = 0.0;
-
-void gyro_signals(void) {
-  Wire.beginTransmission(0x68);
-  Wire.write(0x1A);
-  Wire.write(0x05);
-  Wire.endTransmission(); 
-  Wire.beginTransmission(0x68);
-  Wire.write(0x1B);
-  Wire.write(0x08);
-  Wire.endTransmission();
-  Wire.beginTransmission(0x68);
-  Wire.write(0x43);
-  Wire.endTransmission(); 
-  Wire.requestFrom(0x68,6);
-  int16_t GyroX=Wire.read()<<8 | Wire.read();
-  int16_t GyroY=Wire.read()<<8 | Wire.read();
-  int16_t GyroZ=Wire.read()<<8 | Wire.read();
-  rollRate=(float)GyroX/65.5;
-  pitchRate=(float)GyroY/65.5;
-  yawRate=(float)GyroZ/65.5;
-
-  rollRate-=rollCalibration;
-  pitchRate-=pitchCalibration;
-  yawRate-=yawCalibration;
-}
-
-void calibrate() {
-  int calibrationLength = 2000;
-
-  for (int i = 0; i <calibrationLength; i++) {
-    gyro_signals();
-    rollCalibration+=rollRate;
-    pitchCalibration+=pitchRate;
-    yawCalibration+=yawRate;
-    delay(1);
-  }
-  rollCalibration/=calibrationLength;
-  pitchCalibration/=calibrationLength;
-  yawCalibration/=calibrationLength;
-
-  Serial.print("rollCalibration: ");
-  Serial.println(rollCalibration);
-  Serial.print("pitchCalibration: ");
-  Serial.println(pitchCalibration);
-  Serial.print("yawCalibration: ");
-  Serial.println(yawCalibration);
-}
+float rollAngleSmooth = 0.0;
+float pitchAngleSmooth = 0.0;
 
 void setup() {
-  Serial.begin(57600);
-  pinMode(13, OUTPUT);
-  digitalWrite(13, HIGH);
-  Wire.setClock(400000);
-  Wire.begin();
-  delay(250);
-  Wire.beginTransmission(0x68); 
-  Wire.write(0x6B);
-  Wire.write(0x00);
-  Wire.endTransmission();  
+  MPU6050::setup(-3.71, 1.60, 0.48, -0.05, 0.02, 0.04);
 }
 
 void loop() {
-  gyro_signals();
-  // calibrate();
+  // MPU6050::printCalibration(); // Call this function to generate hard-coded values to feed to setup()
+  MPU6050::process(rollRate, pitchRate, yawRate, rollAngle, pitchAngle);
 
   float smoothing = 1.0 - (analogRead(A7) / float(1023));
 
-  rollSmooth = (smoothing * rollRate) + (1.0 - smoothing) * rollSmooth;
-  pitchSmooth = (smoothing * pitchRate) + (1.0 - smoothing) * pitchSmooth;
-  yawSmooth = (smoothing * yawRate) + (1.0 - smoothing) * yawSmooth;
+  rollRateSmooth = (smoothing * rollRate) + (1.0 - smoothing) * rollRateSmooth;
+  pitchRateSmooth = (smoothing * pitchRate) + (1.0 - smoothing) * pitchRateSmooth;
+  yawRateSmooth = (smoothing * yawRate) + (1.0 - smoothing) * yawRateSmooth;
 
-  Serial.print("Roll = ");
-  Serial.print(int(rollSmooth / 10)); 
-  Serial.print(" Pitch = ");
-  Serial.print(int(pitchSmooth / 10));
-  Serial.print(" Yaw = ");
-  Serial.println(int(yawSmooth / 10));
+  rollAngleSmooth = (smoothing * rollAngle) + (1.0 - smoothing) * rollAngleSmooth;
+  pitchAngleSmooth = (smoothing * pitchAngle) + (1.0 - smoothing) * pitchAngleSmooth;
+
+  // Serial.print("Roll = ");
+  // Serial.print(int(rollRateSmooth / 10)); 
+  // Serial.print(" Pitch = ");
+  // Serial.print(int(pitchRateSmooth / 10));
+  // Serial.print(" Yaw = ");
+  // Serial.println(int(yawRateSmooth / 10));
+
+  // Serial.print("Roll Angle = ");
+  // Serial.print(int(rollAngleSmooth / 10));
+  // Serial.print(" Pitch Angle = ");
+  // Serial.println(int(pitchAngleSmooth / 10));
+
+  Serial.print("Chord Complexity: ");
+  Serial.println(int(rollAngleSmooth / 15));
+  Serial.print("Expression CC: ");
+  Serial.println(int(yawRateSmooth / 10));
   
   delay(50);
 }
 
 // Plan:
-// Roll instantaneous angle controls Chord complexity
-// Yaw rate controls expression CC
+// Roll angle controls Chord complexity
+// Yaw rate controls delay input

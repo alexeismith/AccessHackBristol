@@ -13,15 +13,21 @@ By the act of copying, use, setup or assembly, the user accepts all resulting li
 */
 
 #include <Wire.h>
+
+namespace MPU6050 {
+
 float RateRoll, RatePitch, RateYaw;
-float RateCalibrationRoll, RateCalibrationPitch, RateCalibrationYaw;
-int RateCalibrationNumber;
 float AccX, AccY, AccZ;
+
+float RateCalibrationRoll, RateCalibrationPitch, RateCalibrationYaw;
+float AccCalibrationX, AccCalibrationY, AccCalibrationZ;
+
 float AngleRoll, AnglePitch;
-uint32_t LoopTimer;
+
 float KalmanAngleRoll=0, KalmanUncertaintyAngleRoll=2*2;
 float KalmanAnglePitch=0, KalmanUncertaintyAnglePitch=2*2;
 float Kalman1DOutput[]={0,0};
+
 void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, float KalmanMeasurement) {
   KalmanState=KalmanState+0.004*KalmanInput;
   KalmanUncertainty=KalmanUncertainty + 0.004 * 0.004 * 4 * 4;
@@ -31,6 +37,7 @@ void kalman_1d(float KalmanState, float KalmanUncertainty, float KalmanInput, fl
   Kalman1DOutput[0]=KalmanState; 
   Kalman1DOutput[1]=KalmanUncertainty;
 }
+
 void gyro_signals(void) {
   Wire.beginTransmission(0x68);
   Wire.write(0x1A);
@@ -61,13 +68,15 @@ void gyro_signals(void) {
   RateRoll=(float)GyroX/65.5;
   RatePitch=(float)GyroY/65.5;
   RateYaw=(float)GyroZ/65.5;
-  AccX=(float)AccXLSB/4096;
-  AccY=(float)AccYLSB/4096;
-  AccZ=(float)AccZLSB/4096;
+  AccX=(float)AccXLSB/4096 - AccCalibrationX;
+  AccY=(float)AccYLSB/4096 - AccCalibrationY;
+  AccZ=(float)AccZLSB/4096 - AccCalibrationZ;
   AngleRoll=atan(AccY/sqrt(AccX*AccX+AccZ*AccZ))*1/(3.142/180);
   AnglePitch=-atan(AccX/sqrt(AccY*AccY+AccZ*AccZ))*1/(3.142/180);
 }
-void setup() {
+
+void setup(float rateCalibrationRoll, float rateCalibrationPitch, float rateCalibrationYaw,
+           float accCalibrationX, float accCalibrationY, float accCalibrationZ) {
   Serial.begin(57600);
   pinMode(13, OUTPUT);
   digitalWrite(13, HIGH);
@@ -78,19 +87,65 @@ void setup() {
   Wire.write(0x6B);
   Wire.write(0x00);
   Wire.endTransmission();
-  for (RateCalibrationNumber=0; RateCalibrationNumber<2000; RateCalibrationNumber ++) {
+
+  RateCalibrationRoll = rateCalibrationRoll;
+  RateCalibrationPitch = rateCalibrationPitch;
+  RateCalibrationYaw = rateCalibrationYaw;
+
+  AccCalibrationX = accCalibrationX;
+  AccCalibrationY = accCalibrationY;
+  AccCalibrationZ = accCalibrationZ;
+}
+
+void printCalibration() {
+  int calibrationLength = 2000;
+
+  float rateCalibrationRoll = 0.0;
+  float rateCalibrationPitch = 0.0;
+  float rateCalibrationYaw = 0.0;
+
+  float accCalibrationX = 0.0;
+  float accCalibrationY = 0.0;
+  float accCalibrationZ = 0.0;
+
+  for (int i = 0; i <calibrationLength; i++) {
     gyro_signals();
-    RateCalibrationRoll+=RateRoll;
-    RateCalibrationPitch+=RatePitch;
-    RateCalibrationYaw+=RateYaw;
+  
+    rateCalibrationRoll+=RateRoll;
+    rateCalibrationPitch+=RatePitch;
+    rateCalibrationYaw+=RateYaw;
+
+    accCalibrationX+=AccX;
+    accCalibrationY+=AccY;
+    accCalibrationZ+=AccZ;
+  
     delay(1);
   }
-  RateCalibrationRoll/=2000;
-  RateCalibrationPitch/=2000;
-  RateCalibrationYaw/=2000;
-  LoopTimer=micros();
+
+  rateCalibrationRoll/=calibrationLength;
+  rateCalibrationPitch/=calibrationLength;
+  rateCalibrationYaw/=calibrationLength;
+
+  accCalibrationX/=calibrationLength;
+  accCalibrationY/=calibrationLength;
+  accCalibrationZ/=calibrationLength;
+
+  Serial.print("rateCalibrationRoll: ");
+  Serial.print(rateCalibrationRoll);
+  Serial.print(" rateCalibrationPitch: ");
+  Serial.print(rateCalibrationPitch);
+  Serial.print(" rateCalibrationYaw: ");
+  Serial.println(rateCalibrationYaw);
+
+  Serial.print("accCalibrationX: ");
+  Serial.print(accCalibrationX);
+  Serial.print(" accCalibrationY: ");
+  Serial.print(accCalibrationY);
+  Serial.print(" accCalibrationZ - 1.0: ");
+  Serial.println(accCalibrationZ - 1.0);
 }
-void loop() {
+
+void process(float &rollRate, float &pitchRate, float &yawRate, float &rollAngle, float &pitchAngle) {
   gyro_signals();
   RateRoll-=RateCalibrationRoll;
   RatePitch-=RateCalibrationPitch;
@@ -101,10 +156,16 @@ void loop() {
   kalman_1d(KalmanAnglePitch, KalmanUncertaintyAnglePitch, RatePitch, AnglePitch);
   KalmanAnglePitch=Kalman1DOutput[0]; 
   KalmanUncertaintyAnglePitch=Kalman1DOutput[1];
-  Serial.print("Roll Angle [°] ");
-  Serial.print(KalmanAngleRoll);
-  Serial.print(" Pitch Angle [°] ");
-  Serial.println(KalmanAnglePitch);
-  while (micros() - LoopTimer < 4000);
-  LoopTimer=micros();
+
+  rollRate = RateRoll;
+  pitchRate = RatePitch;
+  yawRate = RateYaw;
+
+  // Kalman filter not working, so use raw angle instead
+//   rollAngle = KalmanAngleRoll;
+//   pitchAngle = KalmanAnglePitch;
+  rollAngle = AngleRoll;
+  pitchAngle = AnglePitch;
+}
+
 }
