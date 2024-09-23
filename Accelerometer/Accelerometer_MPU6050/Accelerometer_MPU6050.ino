@@ -12,6 +12,10 @@ By the act of copying, use, setup or assembly, the user accepts all resulting li
 1.0  5 October 2022 -  initial release
 */
 
+// SOURCE: Carbon Aeronautics - How to use the MPU6050 with Arduino and Teensy
+// https://www.youtube.com/watch?v=yhz3bRQLvBY
+// https://github.com/CarbonAeronautics/Part-IV-MPU6050gyroscope
+
 #include <Wire.h>
 float RateRoll, RatePitch, RateYaw;
 void gyro_signals(void) {
