@@ -1,3 +1,6 @@
 [submodule "Accelerometer/submodule/MPU6050_tutorial"]
 	path = Accelerometer/submodule/MPU6050_tutorial
 	url = https://github.com/CarbonAeronautics/Part-IV-MPU6050gyroscope.git
+[submodule "Accelerometer/submodule/MPU6050_tutorial_with_calibration"]
+	path = Accelerometer/submodule/MPU6050_tutorial_with_calibration
+	url = https://github.com/CarbonAeronautics/Part-V-GyroscopeCalibration.git
