@@ -68,3 +68,9 @@ void loop() {
 // Plan:
 // Roll angle controls Chord complexity
 // Yaw rate controls delay input
+
+// TODO: 
+// Print pot value and hard-code sensitivity for rate and angle separately 
+// Convert yawRate to percentage
+// MIDI output
+// Connect two switches, send signal only when they are pressed
