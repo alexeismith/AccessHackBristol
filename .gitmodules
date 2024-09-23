@@ -4,3 +4,6 @@
 [submodule "Accelerometer/submodule/MPU6050_tutorial_with_calibration"]
 	path = Accelerometer/submodule/MPU6050_tutorial_with_calibration
 	url = https://github.com/CarbonAeronautics/Part-V-GyroscopeCalibration.git
+[submodule "Accelerometer/submodule/MPU6050_tutorial_kalman_angle"]
+	path = Accelerometer/submodule/MPU6050_tutorial_kalman_angle
+	url = https://github.com/CarbonAeronautics/Part-XV-1DKalmanFilter.git
