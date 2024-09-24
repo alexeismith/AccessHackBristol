@@ -18,17 +18,37 @@ By the act of copying, use, setup or assembly, the user accepts all resulting li
 
 #include "MPU6050.h"
 
+// Variables to hold measurements
 float rollRate, pitchRate, yawRate;
 float rollAngle, pitchAngle;
 
-float rollRateSmooth = 0.0;
-float pitchRateSmooth = 0.0;
-float yawRateSmooth = 0.0;
+// Optional smoothing
+// float rollRateSmooth = 0.0;
+// float pitchRateSmooth = 0.0;
+// float yawRateSmooth = 0.0;
+// float rollAngleSmooth = 0.0;
+// float pitchAngleSmooth = 0.0;
 
-float rollAngleSmooth = 0.0;
-float pitchAngleSmooth = 0.0;
+// Roll input range to map to MIDI CC
+int rollAngleMin = -75;
+int rollAngleMax = -25;
+float rollAngleLimit = 0.0;
+
+// Yaw input range to map to MIDI CC
+int yawRateMin = 100;
+int yawRateMax = 250;
+float yawRateLimit = 0.0;
+
+// MIDI CC range
+int midiMin = 0;
+int midiMax = 127;
+
+// MIDI CC outputs
+int chordComplexityCC;
+int expressionCC;
 
 void setup() {
+  // Feed the calibration values found using MPU6050::printCalibration()
   MPU6050::setup(-3.71, 1.60, 0.48, -0.05, 0.02, 0.04);
 }
 
@@ -36,32 +56,25 @@ void loop() {
   // MPU6050::printCalibration(); // Call this function to generate hard-coded values to feed to setup()
   MPU6050::process(rollRate, pitchRate, yawRate, rollAngle, pitchAngle);
 
-  float smoothing = 1.0 - (analogRead(A7) / float(1023));
+  // Optional smoothing: lower is smoother
+  // float smoothing = 0.3;
+  // rollRateSmooth = (smoothing * rollRate) + (1.0 - smoothing) * rollRateSmooth;
+  // pitchRateSmooth = (smoothing * pitchRate) + (1.0 - smoothing) * pitchRateSmooth;
+  // yawRateSmooth = (smoothing * yawRate) + (1.0 - smoothing) * yawRateSmooth;
+  // rollAngleSmooth = (smoothing * rollAngle) + (1.0 - smoothing) * rollAngleSmooth;
+  // pitchAngleSmooth = (smoothing * pitchAngle) + (1.0 - smoothing) * pitchAngleSmooth;
 
-  rollRateSmooth = (smoothing * rollRate) + (1.0 - smoothing) * rollRateSmooth;
-  pitchRateSmooth = (smoothing * pitchRate) + (1.0 - smoothing) * pitchRateSmooth;
-  yawRateSmooth = (smoothing * yawRate) + (1.0 - smoothing) * yawRateSmooth;
+  rollAngleLimit = min(max(rollAngle, rollAngleMin), rollAngleMax);
+  yawRateLimit = min(max(abs(yawRate), yawRateMin), yawRateMax);
 
-  rollAngleSmooth = (smoothing * rollAngle) + (1.0 - smoothing) * rollAngleSmooth;
-  pitchAngleSmooth = (smoothing * pitchAngle) + (1.0 - smoothing) * pitchAngleSmooth;
-
-  // Serial.print("Roll = ");
-  // Serial.print(int(rollRateSmooth / 10)); 
-  // Serial.print(" Pitch = ");
-  // Serial.print(int(pitchRateSmooth / 10));
-  // Serial.print(" Yaw = ");
-  // Serial.println(int(yawRateSmooth / 10));
-
-  // Serial.print("Roll Angle = ");
-  // Serial.print(int(rollAngleSmooth / 10));
-  // Serial.print(" Pitch Angle = ");
-  // Serial.println(int(pitchAngleSmooth / 10));
+  chordComplexityCC = int(roundf(map(rollAngleLimit, rollAngleMin, rollAngleMax, midiMin, midiMax)));
+  expressionCC = int(roundf(map(yawRateLimit, yawRateMin, yawRateMax, midiMin, midiMax)));
 
   Serial.print("Chord Complexity: ");
-  Serial.println(int(rollAngleSmooth / 15));
+  Serial.println(chordComplexityCC);
   Serial.print("Expression CC: ");
-  Serial.println(int(yawRateSmooth / 10));
-  
+  Serial.println(expressionCC);
+
   delay(50);
 }
 
@@ -69,8 +82,6 @@ void loop() {
 // Roll angle controls Chord complexity
 // Yaw rate controls delay input
 
-// TODO: 
-// Print pot value and hard-code sensitivity for rate and angle separately 
-// Convert yawRate to percentage
+// TODO:
 // MIDI output
-// Connect two switches, send signal only when they are pressed
+// Connect switch, freeze chordComplexityCC when not pressed
