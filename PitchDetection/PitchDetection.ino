@@ -10,7 +10,7 @@
 #define GLISS_MIDI_CC 106
 #define PITCH_MAPPING_MIDI_CC 107
 
-#define COPPER_THRESHOLD 50
+#define COPPER_THRESHOLD 10
 
 const int myInput = AUDIO_INPUT_MIC;
 const int lowfreqlim = 250;
@@ -79,6 +79,11 @@ void setup()
   }
 }
 
+unsigned long switchPressedA2 = 0;
+unsigned long switchPressedA3 = 0;
+unsigned long switchDelayMs = 500;
+unsigned long currentTime;
+
 void loop()
 {
 
@@ -92,18 +97,24 @@ void loop()
   // Serial.print(A3min);
   // Serial.print("\n");
 
-  if (analogRead(A2) < COPPER_THRESHOLD)
+  currentTime = millis();
+
+  if (analogRead(A2) < COPPER_THRESHOLD && currentTime - switchPressedA2 > switchDelayMs)
   {
     pitchToggle = !pitchToggle;
+    switchPressedA2 = currentTime;
+    Serial.printf("pitchToggle: %d\n", pitchToggle);
   }
-  if (analogRead(A3) < COPPER_THRESHOLD)
+  if (analogRead(A3) < COPPER_THRESHOLD && currentTime - switchPressedA3 > switchDelayMs)
   {
     glissToggle = !glissToggle;
+    switchPressedA3 = currentTime;
+    Serial.printf("glissToggle: %d\n", glissToggle);
   }
 
-  if (notefreq.available())
+  // if (notefreq.available())
+  if (false)
   {
-
     Serial.print("pitchToggle:");
     Serial.print(pitchToggle);
     Serial.print("\n");
