@@ -50,6 +50,9 @@ const int chordComplexityCC = 102;
 const int expressionCC = 103;
 const int midiChannel = 1;
 
+// Copper signal threshold
+const int copperThreshold = 10;
+
 void setup() {
   // Feed the calibration values found using MPU6050::printCalibration()
   MPU6050::setup(-3.71, 1.60, 0.48, -0.05, 0.02, 0.04);
@@ -84,7 +87,7 @@ void loop() {
   usbMIDI.sendControlChange(expressionCC, expression, midiChannel);
 
   // Gate the chord CC based on copper strip  
-  if (analogRead(A7) > 512) {
+  if (analogRead(A8) < copperThreshold) {
     usbMIDI.sendControlChange(chordComplexityCC, chordComplexity, midiChannel);
   }
 
