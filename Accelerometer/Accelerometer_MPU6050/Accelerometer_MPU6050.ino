@@ -12,9 +12,7 @@ By the act of copying, use, setup or assembly, the user accepts all resulting li
 1.0  5 October 2022 -  initial release
 */
 
-// SOURCE: Carbon Aeronautics - How to use the MPU6050 with Arduino and Teensy
-// https://www.youtube.com/watch?v=yhz3bRQLvBY
-// https://github.com/CarbonAeronautics/Part-IV-MPU6050gyroscope
+#include <MIDI.h>
 
 #include "MPU6050.h"
 
@@ -30,26 +28,33 @@ float rollAngle, pitchAngle;
 // float pitchAngleSmooth = 0.0;
 
 // Roll input range to map to MIDI CC
-int rollAngleMin = -75;
-int rollAngleMax = -25;
+const int rollAngleMin = -75;
+const int rollAngleMax = -25;
 float rollAngleLimit = 0.0;
 
 // Yaw input range to map to MIDI CC
-int yawRateMin = 100;
-int yawRateMax = 250;
+const int yawRateMin = 100;
+const int yawRateMax = 250;
 float yawRateLimit = 0.0;
 
 // MIDI CC range
-int midiMin = 0;
-int midiMax = 127;
+const int midiMin = 0;
+const int midiMax = 127;
 
 // MIDI CC outputs
-int chordComplexityCC;
-int expressionCC;
+int chordComplexity;
+int expression;
+
+// MIDI CC slots
+const int chordComplexityCC = 102;
+const int expressionCC = 103;
+const int midiChannel = 1;
 
 void setup() {
   // Feed the calibration values found using MPU6050::printCalibration()
   MPU6050::setup(-3.71, 1.60, 0.48, -0.05, 0.02, 0.04);
+
+  usbMIDI.begin();
 }
 
 void loop() {
@@ -67,21 +72,21 @@ void loop() {
   rollAngleLimit = min(max(rollAngle, rollAngleMin), rollAngleMax);
   yawRateLimit = min(max(abs(yawRate), yawRateMin), yawRateMax);
 
-  chordComplexityCC = int(roundf(map(rollAngleLimit, rollAngleMin, rollAngleMax, midiMin, midiMax)));
-  expressionCC = int(roundf(map(yawRateLimit, yawRateMin, yawRateMax, midiMin, midiMax)));
+  chordComplexity = int(roundf(map(rollAngleLimit, rollAngleMin, rollAngleMax, midiMin, midiMax)));
+  expression = int(roundf(map(yawRateLimit, yawRateMin, yawRateMax, midiMin, midiMax)));
 
-  Serial.print("Chord Complexity: ");
-  Serial.println(chordComplexityCC);
-  Serial.print("Expression CC: ");
-  Serial.println(expressionCC);
+  // Debug prints
+  // Serial.print("Chord Complexity: ");
+  // Serial.println(chordComplexity);
+  // Serial.print("Expression CC: ");
+  // Serial.println(expression);
+
+  usbMIDI.sendControlChange(expressionCC, expression, midiChannel);
+
+  // Gate the chord CC based on copper strip  
+  if (analogRead(A7) > 512) {
+    usbMIDI.sendControlChange(chordComplexityCC, chordComplexity, midiChannel);
+  }
 
   delay(50);
 }
-
-// Plan:
-// Roll angle controls Chord complexity
-// Yaw rate controls delay input
-
-// TODO:
-// MIDI output
-// Connect switch, freeze chordComplexityCC when not pressed
