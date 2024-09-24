@@ -114,13 +114,6 @@ void loop()
 
   if (notefreq.available())
   {
-    Serial.print("pitchToggle:");
-    Serial.print(pitchToggle);
-    Serial.print("\n");
-    Serial.print("glissToggle:");
-    Serial.print(glissToggle);
-    Serial.print("\n");
-
     note = notefreq.read();
     prob = notefreq.probability();
 
