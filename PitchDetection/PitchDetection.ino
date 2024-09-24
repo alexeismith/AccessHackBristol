@@ -112,8 +112,7 @@ void loop()
     Serial.printf("glissToggle: %d\n", glissToggle);
   }
 
-  // if (notefreq.available())
-  if (false)
+  if (notefreq.available())
   {
     Serial.print("pitchToggle:");
     Serial.print(pitchToggle);
