@@ -69,8 +69,8 @@ void loop() {
   // rollAngleSmooth = (smoothing * rollAngle) + (1.0 - smoothing) * rollAngleSmooth;
   // pitchAngleSmooth = (smoothing * pitchAngle) + (1.0 - smoothing) * pitchAngleSmooth;
 
-  rollAngleLimit = min(max(rollAngle, rollAngleMin), rollAngleMax);
-  yawRateLimit = min(max(abs(yawRate), yawRateMin), yawRateMax);
+  rollAngleLimit = constrain(rollAngle, rollAngleMin, rollAngleMax);
+  yawRateLimit = constrain(abs(yawRate), yawRateMin, yawRateMax);
 
   chordComplexity = int(roundf(map(rollAngleLimit, rollAngleMin, rollAngleMax, midiMin, midiMax)));
   expression = int(roundf(map(yawRateLimit, yawRateMin, yawRateMax, midiMin, midiMax)));
