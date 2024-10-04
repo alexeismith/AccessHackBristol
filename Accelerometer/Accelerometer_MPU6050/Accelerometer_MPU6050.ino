@@ -23,7 +23,6 @@ float rollAngle, pitchAngle;
 // Optional smoothing
 // float rollRateSmooth = 0.0;
 // float pitchRateSmooth = 0.0;
-// float yawRateSmooth = 0.0;
 // float rollAngleSmooth = 0.0;
 // float pitchAngleSmooth = 0.0;
 
@@ -33,9 +32,11 @@ const int rollAngleMax = -25;
 float rollAngleLimit = 0.0;
 
 // Yaw input range to map to MIDI CC
-const int yawRateMin = 100;
-const int yawRateMax = 250;
+const int yawRateMin = 50;
+const int yawRateMax = 150;
 float yawRateLimit = 0.0;
+float yawRateSmooth = 0.0; // History value, initialise to zero
+const float yawRateDecay = 0.01; // Rate of decay for smooth "release"
 
 // MIDI CC range
 const int midiMin = 0;
@@ -68,12 +69,20 @@ void loop() {
   // float smoothing = 0.3;
   // rollRateSmooth = (smoothing * rollRate) + (1.0 - smoothing) * rollRateSmooth;
   // pitchRateSmooth = (smoothing * pitchRate) + (1.0 - smoothing) * pitchRateSmooth;
-  // yawRateSmooth = (smoothing * yawRate) + (1.0 - smoothing) * yawRateSmooth;
   // rollAngleSmooth = (smoothing * rollAngle) + (1.0 - smoothing) * rollAngleSmooth;
   // pitchAngleSmooth = (smoothing * pitchAngle) + (1.0 - smoothing) * pitchAngleSmooth;
 
+  // Apply smoothing only when yawRate is decaying, like a "release" envelope
+  // This makes effects send more noticeable / easier to trigger
+  if (yawRate > yawRateSmooth) {
+    yawRateSmooth = yawRate;
+  }
+  else {
+    yawRateSmooth = (yawRateDecay * yawRate) + (1.0 - yawRateDecay) * yawRateSmooth;
+  }
+
   rollAngleLimit = constrain(rollAngle, rollAngleMin, rollAngleMax);
-  yawRateLimit = constrain(abs(yawRate), yawRateMin, yawRateMax);
+  yawRateLimit = constrain(abs(yawRateSmooth), yawRateMin, yawRateMax);
 
   chordComplexity = int(roundf(map(rollAngleLimit, rollAngleMin, rollAngleMax, midiMin, midiMax)));
   expression = int(roundf(map(yawRateLimit, yawRateMin, yawRateMax, midiMin, midiMax)));
